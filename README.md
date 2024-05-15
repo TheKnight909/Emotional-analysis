@@ -8,6 +8,7 @@ This repository contains the implementation of an emotion analysis model that pr
 - Use of TF-IDF, BM-25, and Word2Vec for text vectorization.
 - Integration of transfer learning models Arabert and Marabert.
 - Emotion prediction using machine learning algorithms including KNN, SVM, and Random Forest.
+- Utilization of generative AI models, such as Gemini and ChatGPT, to enhance emotion prediction capabilities.
 
 ## Getting Started
 
