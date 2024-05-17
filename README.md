@@ -83,6 +83,13 @@ predicted_emotions = predict_emotions(preprocessed_data)
 | aubmindlab/bert-base-arabertv2              | 0.14          | 0.25            | 0.61     | 0.87    | 0.80                    |
 | Bert After Translation                      | 0.09          | 0.23            | 0.59     | 0.87    | 0.79                    |
 
+### Generative AI Performance
+
+| Model                                       | Accuracy      | ROC AUC         | Precision| Recall  | f1-score (weighted avg) |
+|---------------------------------------------|---------------|-----------------|----------|---------|-------------------------|
+| ChatGPT 3.5-turbo                           | 0.66          | 0.79            | 0.76     | 0.66    | 0.68                    |
+| Gemini 1.5 Pro                              | 0.67          | 0.79            | 0.73     | 0.67    | 0.69                    |
+
 ## Contributing
 
 Contributions to this project are welcome! Please fork the repository and submit pull requests with your proposed changes.
@@ -95,4 +102,5 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 - Arabert and Marabert teams for providing pre-trained models.
 - OpenAI for the ChatGPT model.
+- Google for the Gemini model.
 
