@@ -13,28 +13,18 @@ from google.oauth2 import service_account
 import joblib 
 from preProcess import ArabicTextPreprocessor
 from huggingface_hub import hf_hub_download
+import re
 
-
-# Retrieve the API keys from environment variables
-openai_key = os.getenv("OPENAI_API_KEY")
-google_api_key = os.getenv("GOOGLE_API_KEY")
-gcp_credentials = os.getenv("GCP_CREDENTIALS")
-
-# Initialize the Google Translate API client with credentials
+# Set up authentication for Google Cloud
+# os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "C:/Users/lenovo/OneDrive - King Suad University/Desktop/my-project-418914-a848e32ee3d0.json"
+# Construct credentials from the environment variable
 def get_credentials():
-    if gcp_credentials:
-        creds = service_account.Credentials.from_service_account_info(json.loads(gcp_credentials))
+    creds_json = st.secrets["gcp"]["credentials"]
+    if creds_json:
+        creds = service_account.Credentials.from_service_account_info(json.loads(creds_json))
     else:
         creds, _ = google.auth.default()
     return creds
-
-# def get_credentials():
-#     creds_json = st.secrets["gcp"]["credentials"]
-#     if creds_json:
-#         creds = service_account.Credentials.from_service_account_info(json.loads(creds_json))
-#     else:
-#         creds, _ = google.auth.default()
-#     return creds
 
 # Initialize the Google Translate API client with credentials
 translator = translate.Client(credentials=get_credentials())
@@ -51,6 +41,7 @@ def get_model():
     new_tokenizer = AutoTokenizer.from_pretrained("TheKnight115/fine-tuned-bert-base-uncased")
     new_model = AutoModelForSequenceClassification.from_pretrained("TheKnight115/fine-tuned-bert-base-uncased")
     tokenizer = AutoTokenizer.from_pretrained("TheKnight115/Finetuned_MarBERT_Arabic_Emotional_Analysis")
+    preprocessor = ArabicTextPreprocessor()
     # Download models from Hugging Face
     SVM_model_path = hf_hub_download(repo_id="TheKnight115/Traditional_machine_learning_algorithm", filename="SVM_model.pkl")
     KNN_model_path = hf_hub_download(repo_id="TheKnight115/Traditional_machine_learning_algorithm", filename="KNN_model.pkl")
@@ -59,14 +50,13 @@ def get_model():
     SVM = joblib.load(SVM_model_path)
     KNN = joblib.load(KNN_model_path)
     RF = joblib.load(RF_model_path)
-
     model.eval()  # Set the model to evaluation mode
     new_model.eval()
     return model, new_model, new_tokenizer, tokenizer, preprocessor, SVM, KNN, RF
 
 model, new_model, new_tokenizer, tokenizer, preprocessor, SVM, KNN, RF = get_model()  # Load model when script runs
 
-def classify_traditional_approach_emotion(text):
+def Pre_processed_text_emotion(text):
     processed_text = preprocessor.preprocess_text(text)
     return processed_text
 
@@ -98,17 +88,18 @@ def analyze_text_emotion(text, target_language="en"):
     top_emotion = labels[top_emotion_index]
     top_probability = probabilities[0, top_emotion_index].item() * 100
     
-    return f"{top_emotion} ({top_probability:.2f}%)\nThe Translated text: {translated_text}"
+    return f"{top_emotion} ({top_probability:.2f}%) \nThe Translated text: {translated_text}"
 
 # Retrieve the API key securely
-# openai_key = st.secrets["api_keys"]["openai_key"]
-# google_api_key = st.secrets["api_keys"]["google_api_key"]
+openai_key = st.secrets["api_keys"]["openai_key"]
+google_api_key = st.secrets["api_keys"]["google_api_key"]
 
 # Explicitly set the API key for OpenAI (not recommended for production)
 client = OpenAI(api_key=openai_key)
 
 # Gemini API key (also not recommended for production storage)
 API_KEY = google_api_key
+
 
 
 
@@ -158,8 +149,31 @@ def classify_emotion_gemini(text):
     model = genai.GenerativeModel('gemini-pro', safety_settings=safety_settings, generation_config=generation_config)
     chat = model.start_chat(history=[])
     
-    response = response = chat.send_message("Simply classify the following text snippet into only one of six emotions: joy, sadness, anger, fear, disgust, or surprise with the with percentage so the output will only be the emotion with it percentage and don't say to me i don't know" + text)
+    response = response = chat.send_message("Simply classify the following text snippet into only one of six emotions: joy, sadness, anger, fear, disgust, or surprise with the with percentage so the output will only be the emotion with it percentage and don't say i don't know" + text)
     return response.text
+
+def contains_arabic(text):
+    # Check if the text contains at least one Arabic word
+    return re.search("[\u0600-\u06FF]", text) is not None
+
+def check_sarcasm(text):
+    try:
+        stream = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+            {"role": "system", "content": "You are a sarcasm detection assistant."},
+            {"role": "user", "content": f"Is the following text sarcastic? Answer with 'Yes' or 'No'.\n\nText: {text}"}
+            ],
+            max_tokens=5,
+            stream=True
+        )
+        result = ""
+        for chunk in stream:
+            if chunk.choices[0].delta.content is not None:
+                result += chunk.choices[0].delta.content
+        return result
+    except Exception as e:
+        return f"An error occurred: {e}"
 
 def main():
     st.title('Emotion Classifier')
@@ -167,30 +181,42 @@ def main():
     user_input = st.text_area("Enter your text here:", height=150)
     if st.button('Classify Emotion'):
         if user_input:
-            with st.spinner('Analyzing...'):
-                openai_result = classify_emotion_openai(user_input)
-                gemini_result = classify_emotion_gemini(user_input)
-                marbert_result = classify_emotion_bert(user_input)
-                translated_emotion_result = analyze_text_emotion(user_input)
-                Pre_processed_text = classify_traditional_approach_emotion(user_input)
-                svm_result = SVM_Classified_Emotion(Pre_processed_text)
-                knn_result = KNN_Classified_Emotion(Pre_processed_text)
-                rf_result = RF_Classified_Emotion(Pre_processed_text)
-            # Creating two columns for layout
-            col1, col2 = st.columns([2, 2])
+            if contains_arabic(user_input):
+                with st.spinner('Analyzing...'):
+                    openai_result = classify_emotion_openai(user_input)
+                    gemini_result = classify_emotion_gemini(user_input)
+                    marbert_result = classify_emotion_bert(user_input)
+                    translated_emotion_result = analyze_text_emotion(user_input)
+                    Pre_processed_text = Pre_processed_text_emotion(user_input)
+                    svm_result = SVM_Classified_Emotion(Pre_processed_text)
+                    knn_result = KNN_Classified_Emotion(Pre_processed_text)
+                    rf_result = RF_Classified_Emotion(Pre_processed_text)
+                    # Check for sarcasm
+                    sarcasm_result = check_sarcasm(user_input)
+                    st.markdown(f"<h6 style='text-align: center;'>Is the text sarcastic? {sarcasm_result}</h6>", unsafe_allow_html=True)
+                    st.markdown(f"<h4 style='text-align: center;'>Classification Results: </h4>", unsafe_allow_html=True)
             
-            with col1:
-                st.write(f"**GPT Classified Emotion:** {openai_result}")
-                st.write(f"**Gemini Classified Emotion:** {gemini_result}")
-                st.write(f"**Our Finetuned MarBERT Classified Emotion:** {marbert_result}")
-                st.write(f"**English bert Classified Emotion:** {translated_emotion_result}")
-            
-            with col2:
-                st.write(f"**SVM Classified Emotion:** {svm_result}")
-                st.write(f"**Random Forest Classified Emotion:** {rf_result}")
-                st.write(f"**KNN Classified Emotion:** {knn_result}")
+                # Creating two columns for layout
+                col1, col2 = st.columns([3, 2])
+                
+                with col1:
+                    st.write(f"**GPT Classified Emotion:** {openai_result}")
+                    st.write(f"**Gemini Classified Emotion:** {gemini_result}")
+                    st.write(f"**Our Finetuned MarBERT Classified Emotion:** {marbert_result}")
+                    st.write(f"**English bert Classified Emotion:** {translated_emotion_result}")
+                
+                with col2:
+                    st.write("Pre processed Text: " + Pre_processed_text)
+                    st.write(f"**SVM Classified Emotion:** {svm_result}")
+                    st.write(f"**Random Forest Classified Emotion:** {rf_result}")
+                    st.write(f"**KNN Classified Emotion:** {knn_result}")
+            else:
+                st.error("The input text must contain at least one Arabic word.")
         else:
             st.error("Please enter some text to analyze.")
+    st.markdown("---")
+    st.markdown("<h3 style='text-align: center;'>Programmed by Faris, Fares, Nawaf and Omar</h3>", unsafe_allow_html=True)
+
 
 if __name__ == '__main__':
     main()
