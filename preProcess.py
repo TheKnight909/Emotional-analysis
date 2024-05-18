@@ -46,24 +46,32 @@ class ArabicTextPreprocessor:
             ":=(": "يبكي", ":'(": "حزن", ":'‑(": "حزن", "XD" : "ضحك",
             ":D" : "ضحك", "♬" : "موسيقي", "♡" : "حب", "☻"  : "ضحك",
         }
+
+        
+        self.negation_words = [
+            "مب","غير", "ليس", "سوى", "لم", "لن", "ما", "لا", "بلا", "بدون", "عير", "عدا", "كلا"
+        ]
+    
         self.stemmer = ISRIStemmer()
 
     def preprocess_text(self, text):
+        text = self.replace_emojis_with_text(text)
+        text = self.replace_emoticons_with_text(text)
         text = self.remove_stop_words(text)
-        text = self.lemmatize_arabic(text)
-        text = self.normalize_arabic(text)
+        text = self.remove_urls(text)
         text = self.remove_non_arabic(text)
         text = self.remove_numbers(text)
+        text = self.normalize_arabic(text)
         text = self.remove_punctuations(text)
-        text = self.remove_urls(text)
-        text = self.replace_emojis_with_text(text)
-        print(text)
-        text = self.replace_emoticons_with_text(text)
+        text = self.lemmatize_arabic(text)
         return text
 
     def remove_stop_words(self, text):
         arabic_stopwords = stp.stopwords_list()
-        return " ".join([word for word in text.split() if word not in arabic_stopwords])
+        # Exclude negation words from the stop words list
+        stopwords_to_remove = [word for word in arabic_stopwords if word not in self.negation_words]
+        return " ".join([word for word in text.split() if word not in stopwords_to_remove])
+
 
     def lemmatize_arabic(self, text):
         return " ".join([self.stemmer.stem(word) for word in text.split()])
@@ -127,6 +135,7 @@ class ArabicTextPreprocessor:
 
     def replace_emoticons_with_text(self, text):
         translated_text = ""
-        for char in text:
-            translated_text += self.emoticons.get(char, char) + ""
+        seperarate_word = text.split(' ')
+        for word in seperarate_word:
+            translated_text += self.emoticons.get(word, word) + " "
         return translated_text
