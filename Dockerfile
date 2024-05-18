@@ -10,6 +10,9 @@ COPY requirements.txt .
 # Upgrade pip and install dependencies
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
+    
+# Install nltk and download the stopwords
+RUN python -c "import nltk; nltk.download('stopwords')"
 
 # Copy the rest of the application code
 COPY . .
