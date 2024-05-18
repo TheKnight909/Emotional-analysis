@@ -19,3 +19,5 @@ google.generativeai
 google-cloud-translate
 google-auth
 torch
+joblib
+huggingface_hub
