@@ -12,6 +12,7 @@ import google.auth
 from google.oauth2 import service_account
 import joblib 
 from preProcess import ArabicTextPreprocessor
+from huggingface_hub import hf_hub_download
 
 
 # Retrieve the API keys from environment variables
@@ -50,10 +51,14 @@ def get_model():
     new_tokenizer = AutoTokenizer.from_pretrained("TheKnight115/fine-tuned-bert-base-uncased")
     new_model = AutoModelForSequenceClassification.from_pretrained("TheKnight115/fine-tuned-bert-base-uncased")
     tokenizer = AutoTokenizer.from_pretrained("TheKnight115/Finetuned_MarBERT_Arabic_Emotional_Analysis")
-    preprocessor = ArabicTextPreprocessor()
-    SVM = joblib.load('SVM_model.pkl')
-    KNN = joblib.load('KNN_model.pkl')
-    RF = joblib.load('RF_model.pkl')
+    # Download models from Hugging Face
+    SVM_model_path = hf_hub_download(repo_id="TheKnight115/Traditional_machine_learning_algorithm", filename="SVM_model.pkl")
+    KNN_model_path = hf_hub_download(repo_id="TheKnight115/Traditional_machine_learning_algorithm", filename="KNN_model.pkl")
+    RF_model_path = hf_hub_download(repo_id="TheKnight115/Traditional_machine_learning_algorithm", filename="RF_model.pkl")
+    
+    SVM = joblib.load(SVM_model_path)
+    KNN = joblib.load(KNN_model_path)
+    RF = joblib.load(RF_model_path)
 
     model.eval()  # Set the model to evaluation mode
     new_model.eval()
