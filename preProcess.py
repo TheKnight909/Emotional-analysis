@@ -1,9 +1,12 @@
 import re
 import regex
 from pyarabic import araby
-import arabicstopwords.arabicstopwords as stp 
+from nltk.corpus import stopwords
 from nltk.stem.isri import ISRIStemmer
 import emoji
+
+# Ensure you have downloaded the Arabic stop words
+nltk.download('stopwords')
 
 class ArabicTextPreprocessor:
     def __init__(self):
@@ -67,7 +70,7 @@ class ArabicTextPreprocessor:
         return text
 
     def remove_stop_words(self, text):
-        arabic_stopwords = stp.stopwords_list()
+        arabic_stopwords = set(stopwords.words('arabic'))
         # Exclude negation words from the stop words list
         stopwords_to_remove = [word for word in arabic_stopwords if word not in self.negation_words]
         return " ".join([word for word in text.split() if word not in stopwords_to_remove])
