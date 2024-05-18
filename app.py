@@ -15,16 +15,26 @@ from preProcess import ArabicTextPreprocessor
 from huggingface_hub import hf_hub_download
 import re
 
-# Set up authentication for Google Cloud
-# os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "C:/Users/lenovo/OneDrive - King Suad University/Desktop/my-project-418914-a848e32ee3d0.json"
-# Construct credentials from the environment variable
+# Retrieve the API keys from environment variables
+openai_key = os.getenv("OPENAI_API_KEY")
+google_api_key = os.getenv("GOOGLE_API_KEY")
+gcp_credentials = os.getenv("GCP_CREDENTIALS")
+
+# Initialize the Google Translate API client with credentials
 def get_credentials():
-    creds_json = st.secrets["gcp"]["credentials"]
-    if creds_json:
-        creds = service_account.Credentials.from_service_account_info(json.loads(creds_json))
+    if gcp_credentials:
+        creds = service_account.Credentials.from_service_account_info(json.loads(gcp_credentials))
     else:
         creds, _ = google.auth.default()
     return creds
+
+# def get_credentials():
+#     creds_json = st.secrets["gcp"]["credentials"]
+#     if creds_json:
+#         creds = service_account.Credentials.from_service_account_info(json.loads(creds_json))
+#     else:
+#         creds, _ = google.auth.default()
+#     return creds
 
 # Initialize the Google Translate API client with credentials
 translator = translate.Client(credentials=get_credentials())
