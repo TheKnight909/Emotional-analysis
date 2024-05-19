@@ -101,8 +101,8 @@ def analyze_text_emotion(text, target_language="en"):
     return f"{top_emotion} ({top_probability:.2f}%) \nThe Translated text: {translated_text}"
 
 # Retrieve the API key securely
-openai_key = st.secrets["api_keys"]["openai_key"]
-google_api_key = st.secrets["api_keys"]["google_api_key"]
+# openai_key = st.secrets["api_keys"]["openai_key"]
+# google_api_key = st.secrets["api_keys"]["google_api_key"]
 
 # Explicitly set the API key for OpenAI (not recommended for production)
 client = OpenAI(api_key=openai_key)
