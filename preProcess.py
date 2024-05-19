@@ -1,5 +1,6 @@
 import re
 import regex
+import nltk
 from pyarabic import araby
 from nltk.corpus import stopwords
 from nltk.stem.isri import ISRIStemmer
