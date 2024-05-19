@@ -20,3 +20,4 @@ google-auth
 torch
 joblib
 huggingface_hub
+scikit-learn
